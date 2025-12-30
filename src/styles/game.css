@@ -25,6 +25,9 @@
     color: var(--text-primary);
     user-select: none;
     transition: border-color var(--transition-fast);
+    /* 3D flip setup */
+    transform-style: preserve-3d;
+    perspective: 1000px;
 }
 
 .tile.filled {
@@ -32,10 +35,14 @@
     animation: pop 0.1s ease;
 }
 
+/* Flip animation with color reveal at midpoint */
+.tile.revealing {
+    animation: flipReveal 0.5s ease forwards;
+}
+
 .tile.revealed {
     border-color: transparent;
     color: white;
-    animation: flipIn 0.25s ease forwards;
 }
 
 .tile.correct {

@@ -177,7 +177,7 @@ export class Game {
                 const yellowCount = result.filter(r => r === 'present').length;
                 this.onGuessComplete(this.guesses.length, greenCount, yellowCount, this.won);
             }
-        }, NUM_COLS * 250 + 300);
+        }, NUM_COLS * 300 + 500); // Wait for all tiles to finish (300ms per tile + 500ms flip)
     }
 
     evaluateGuess(guess) {
@@ -252,19 +252,30 @@ export class Game {
 
     revealRow(result) {
         const row = this.currentRow;
+        const FLIP_DURATION = 500; // ms - matches CSS animation duration
+        const TILE_DELAY = 300; // ms between each tile starting
 
         for (let col = 0; col < NUM_COLS; col++) {
             const tile = this.tiles[row][col];
             const state = result[col];
             const letter = tile.textContent.toLowerCase();
 
-            // Delay each tile
+            // Start the flip animation for this tile
             setTimeout(() => {
-                tile.classList.add('revealed', state, `reveal-${col + 1}`);
+                tile.classList.add('revealing');
 
-                // Update keyboard
-                this.keyboard.updateKeyState(letter, state);
-            }, col * 250);
+                // Add the color class at the midpoint of the flip (when tile is edge-on)
+                setTimeout(() => {
+                    tile.classList.add(state, 'revealed');
+                    // Update keyboard
+                    this.keyboard.updateKeyState(letter, state);
+                }, FLIP_DURATION / 2);
+
+                // Remove the revealing class after animation completes
+                setTimeout(() => {
+                    tile.classList.remove('revealing');
+                }, FLIP_DURATION);
+            }, col * TILE_DELAY);
         }
 
         // Move to next row

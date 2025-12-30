@@ -380,7 +380,7 @@ export async function startNextPuzzle(roomId, newWord) {
 export function subscribeToRoom(roomId, onRoomUpdate) {
     if (!supabase) throw new Error('Supabase not initialized');
 
-    return supabase
+    const channel = supabase
         .channel(`room:${roomId}`)
         .on('postgres_changes',
             {
@@ -390,16 +390,21 @@ export function subscribeToRoom(roomId, onRoomUpdate) {
                 filter: `id=eq.${roomId}`
             },
             payload => {
+                console.log('Room update received:', payload);
                 onRoomUpdate(payload.new);
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log('Room subscription status:', status);
+        });
+
+    return channel;
 }
 
 export function subscribeToGameStates(roomId, myUserId, onOpponentUpdate) {
     if (!supabase) throw new Error('Supabase not initialized');
 
-    return supabase
+    const channel = supabase
         .channel(`game_states:${roomId}`)
         .on('postgres_changes',
             {
@@ -409,13 +414,18 @@ export function subscribeToGameStates(roomId, myUserId, onOpponentUpdate) {
                 filter: `room_id=eq.${roomId}`
             },
             payload => {
+                console.log('Game state update received:', payload);
                 // Only process opponent updates
                 if (payload.new && payload.new.user_id !== myUserId) {
                     onOpponentUpdate(payload.new);
                 }
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log('Game states subscription status:', status);
+        });
+
+    return channel;
 }
 
 export function unsubscribe(channel) {
