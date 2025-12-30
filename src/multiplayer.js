@@ -143,10 +143,13 @@ export class Multiplayer {
         if (!this.user || !this.opponent) return;
 
         try {
+            // Always pass user IDs in consistent order (my ID first)
             const stats = await getHeadToHead(this.user.id, this.opponent.id);
+            // user1Wins corresponds to first argument (my ID)
             this.myScore = stats.user1Wins;
             this.opponentScore = stats.user2Wins;
             this.draws = stats.draws;
+            console.log('Loaded head-to-head:', { myScore: this.myScore, opponentScore: this.opponentScore, draws: this.draws });
         } catch (error) {
             console.error('Failed to load head-to-head:', error);
         }
@@ -215,21 +218,21 @@ export class Multiplayer {
                 draw = true;
             }
 
-            // Save match result
-            await saveMatchResult(
-                this.room.id,
-                this.room.player1_id,
-                this.room.player2_id,
-                winnerId,
-                this.room.player1_id === this.user.id ? myGuesses : opponentGuesses,
-                this.room.player1_id === this.user.id ? opponentGuesses : myGuesses,
-                this.room.current_word
-            );
+            // Only the host (player1) saves the match result to prevent duplicates
+            if (this.isHost()) {
+                await saveMatchResult(
+                    this.room.id,
+                    this.room.player1_id,
+                    this.room.player2_id,
+                    winnerId,
+                    myGuesses || 7, // 7 if didn't win (more than max 6)
+                    opponentGuesses || 7,
+                    this.room.current_word
+                );
+            }
 
-            // Update local scores
-            if (won) this.myScore++;
-            else if (!draw) this.opponentScore++;
-            else this.draws++;
+            // Reload scores from database to ensure accuracy
+            await this.loadHeadToHead();
 
             return {
                 won,
